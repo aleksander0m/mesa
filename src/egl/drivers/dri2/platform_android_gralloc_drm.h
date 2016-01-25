@@ -33,9 +33,9 @@
 
 #define GRALLOC_MODULE_PERFORM_GET_DRM_FD 0x0FD4DEAD
 
-static inline int gralloc_drm_get_gem_handle(buffer_handle_t handle)
+static inline struct gralloc_drm_handle_t *gralloc_drm_handle(buffer_handle_t _handle)
 {
-   return 0; /* Not supported, return invalid handle. */
+   return NULL; /* Not supported, return invalid handle. */
 }
 
 #endif
