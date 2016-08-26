@@ -35,6 +35,7 @@
 #include "pipe/p_screen.h"
 #include "util/u_inlines.h"
 #include "util/u_memory.h"
+#include "loader.h"
 
 struct renderonly *
 renderonly_dup(const struct renderonly *ro)
