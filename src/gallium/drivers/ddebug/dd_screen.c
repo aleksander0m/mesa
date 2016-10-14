@@ -30,7 +30,6 @@
 #include "util/u_memory.h"
 #include <stdio.h>
 
-
 static const char *
 dd_screen_get_name(struct pipe_screen *_screen)
 {
@@ -211,8 +210,12 @@ dd_screen_resource_from_handle(struct pipe_screen *_screen,
                                unsigned usage)
 {
    struct pipe_screen *screen = dd_screen(_screen)->screen;
-   struct pipe_resource *res =
-      screen->resource_from_handle(screen, templ, handle, usage);
+   struct pipe_resource *res;
+
+   if (!screen || !screen->resource_from_handle)
+      return NULL;
+
+   res = screen->resource_from_handle(screen, templ, handle, usage);
 
    if (!res)
       return NULL;
@@ -313,11 +316,12 @@ ddebug_screen_create(struct pipe_screen *screen)
 {
    struct dd_screen *dscreen;
    const char *option;
-   bool no_flush;
+   bool no_flush = true;
    unsigned timeout = 0;
    unsigned apitrace_dump_call = 0;
-   enum dd_mode mode;
+   enum dd_mode mode = DD_DUMP_ALL_CALLS;
 
+#if 0
    option = debug_get_option("GALLIUM_DDEBUG", NULL);
    if (!option)
       return screen;
@@ -375,7 +379,7 @@ ddebug_screen_create(struct pipe_screen *screen)
       if (sscanf(option, "%u", &timeout) != 1)
          return screen;
    }
-
+#endif
    dscreen = CALLOC_STRUCT(dd_screen);
    if (!dscreen)
       return NULL;
@@ -418,7 +422,7 @@ ddebug_screen_create(struct pipe_screen *screen)
    dscreen->timeout_ms = timeout;
    dscreen->mode = mode;
    dscreen->no_flush = no_flush;
-   dscreen->verbose = strstr(option, "verbose") != NULL;
+   dscreen->verbose = 1;//strstr(option, "verbose") != NULL;
    dscreen->apitrace_dump_call = apitrace_dump_call;
 
    switch (dscreen->mode) {
