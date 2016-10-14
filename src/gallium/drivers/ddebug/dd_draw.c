@@ -38,6 +38,8 @@
 #include "util/os_time.h"
 #include <inttypes.h>
 
+#include <android/log.h>
+#define fprintf(x, ...) ({ x == stderr ? __android_log_print(ANDROID_LOG_INFO, "mesa", __VA_ARGS__) : fprintf(x, __VA_ARGS__); })
 
 static void
 dd_write_header(FILE *f, struct pipe_screen *screen, unsigned apitrace_call_number)
@@ -1360,7 +1362,7 @@ dd_context_flush_resource(struct pipe_context *_pipe,
                           struct pipe_resource *resource)
 {
    struct dd_context *dctx = dd_context(_pipe);
-   struct pipe_context *pipe = dctx->pipe;
+   struct pipe_context *pipe = _pipe ? dctx->pipe : NULL;
    struct dd_draw_record *record = dd_create_record(dctx);
 
    record->call.type = CALL_FLUSH_RESOURCE;
