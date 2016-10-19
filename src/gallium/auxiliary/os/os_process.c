@@ -59,6 +59,7 @@ os_get_process_name(char *procname, size_t size)
 {
    const char *name;
 
+
    /* First, check if the GALLIUM_PROCESS_NAME env var is set to
     * override the normal process name query.
     */
