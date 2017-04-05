@@ -37,6 +37,9 @@
 #include "util/u_memory.h"
 #include "loader.h"
 
+#include <android/log.h>
+#define fprintf(x, ...) __android_log_print(ANDROID_LOG_INFO, "renderonly", __VA_ARGS__)
+
 struct renderonly *
 renderonly_dup(const struct renderonly *ro)
 {
@@ -101,6 +104,10 @@ renderonly_create_kms_dumb_buffer_for_resource(struct pipe_resource *rsc,
       goto free_dumb;
    }
 
+   scanout->prime_fd = prime_fd;
+
+   /* import dumb buffer */
+   memset(handle, 0, sizeof(*handle));
    handle->type = DRM_API_HANDLE_TYPE_FD;
    handle->handle = prime_fd;
    handle->stride = create_dumb.pitch;
@@ -156,4 +163,3 @@ free_scanout:
 
    return NULL;
 }
-
