@@ -72,6 +72,11 @@ get_gl_override(gl_api api, int *version, bool *fwd_context,
 
    STATIC_ASSERT(ARRAY_SIZE(override) == API_OPENGL_LAST + 1);
 
+   *version = 30;
+   *fwd_context = 0;
+   *compat_context = 0;
+   return;
+
    if (api == API_OPENGLES)
       goto exit;
 
@@ -215,6 +220,8 @@ _mesa_override_glsl_version(struct gl_constants *consts)
    const char *version;
    int n;
 
+   consts->GLSLVersion = 300;
+   return;
    version = getenv(env_var);
    if (!version) {
       return;
