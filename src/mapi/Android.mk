@@ -67,6 +67,39 @@ mapi_abi_headers += $(abi_header)
 include $(MESA_COMMON_MK)
 include $(BUILD_SHARED_LIBRARY)
 
+# ---------------------------------------
+# Build libGLESv2
+# ---------------------------------------
+
+include $(CLEAR_VARS)
+
+abi_header := es2api/glapi_mapi_tmp.h
+
+LOCAL_SRC_FILES := \
+	entry.c
+
+LOCAL_CFLAGS := \
+	-DMAPI_MODE_BRIDGE \
+	-DMAPI_ABI_HEADER=\"$(abi_header)\"
+
+LOCAL_C_INCLUDES := \
+	$(MESA_TOP)/src/mapi
+
+LOCAL_MODULE := libGLESv2_mesa
+
+LOCAL_MODULE_CLASS := SHARED_LIBRARIES
+intermediates := $(call local-generated-sources-dir)
+abi_header := $(intermediates)/$(abi_header)
+LOCAL_GENERATED_SOURCES := $(abi_header)
+LOCAL_SHARED_LIBRARIES := libglapi
+
+$(abi_header): PRIVATE_PRINTER := es2api
+
+mapi_abi_headers += $(abi_header)
+
+include $(MESA_COMMON_MK)
+include $(BUILD_SHARED_LIBRARY)
+
 
 mapi_abi_deps := \
 	$(wildcard $(LOCAL_PATH)/glapi/gen/*.py) \
