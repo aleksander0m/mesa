@@ -36,17 +36,21 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES := \
 	$(LIBEGL_C_FILES) \
 	$(dri2_backend_core_FILES) \
-	drivers/dri2/platform_android.c
+	drivers/dri2/platform_android.c \
+	drivers/dri2/platform_drm.c
 
 LOCAL_CFLAGS := \
 	-D_EGL_NATIVE_PLATFORM=_EGL_PLATFORM_ANDROID \
 	-D_EGL_BUILT_IN_DRIVER_DRI2 \
 	-DHAS_GRALLOC_DRM_HEADERS \
-	-DHAVE_ANDROID_PLATFORM
+	-DHAVE_ANDROID_PLATFORM \
+	-DHAVE_DRM_PLATFORM
 
 LOCAL_C_INCLUDES := \
 	$(MESA_TOP)/src/egl/main \
-	$(MESA_TOP)/src/egl/drivers/dri2
+	$(MESA_TOP)/src/gbm/main \
+	$(MESA_TOP)/src/egl/drivers/dri2 \
+	$(MESA_TOP)/src/gbm/backends/dri
 
 LOCAL_STATIC_LIBRARIES := \
 	libmesa_loader
@@ -57,7 +61,8 @@ LOCAL_SHARED_LIBRARIES := \
 	liblog \
 	libcutils \
 	libgralloc_drm \
-	libsync
+	libsync \
+	libgbm
 
 # This controls enabling building of driver libraries
 ifneq ($(HAVE_I915_DRI),)
