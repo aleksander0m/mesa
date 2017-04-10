@@ -273,7 +273,7 @@ struct dri2_egl_surface
    struct gbm_dri_surface *gbm_surf;
 #endif
 
-#if defined(HAVE_WAYLAND_PLATFORM) || defined(HAVE_DRM_PLATFORM)
+#if defined(HAVE_WAYLAND_PLATFORM) || defined(HAVE_ANDROID_PLATFORM) || defined(HAVE_DRM_PLATFORM)
    __DRIbuffer           *dri_buffers[__DRI_BUFFER_COUNT];
    struct {
 #ifdef HAVE_WAYLAND_PLATFORM
@@ -288,6 +288,9 @@ struct dri2_egl_surface
 #ifdef HAVE_DRM_PLATFORM
       struct gbm_bo       *bo;
 #endif
+#ifdef HAVE_ANDROID_PLATFORM
+      struct ANativeWindowBuffer *buffer;
+#endif
       bool                locked;
       int                 age;
    } color_buffers[4], *back, *current;
@@ -301,15 +304,6 @@ struct dri2_egl_surface
 
    /* EGL-owned buffers */
    __DRIbuffer           *local_buffers[__DRI_BUFFER_COUNT];
-
-   /* Used to record all the buffers created by ANativeWindow and their ages.
-    * Usually Android uses at most triple buffers in ANativeWindow
-    * so hardcode the number of color_buffers to 3.
-    */
-   struct {
-      struct ANativeWindowBuffer *buffer;
-      int age;
-   } color_buffers[3], *back;
 #endif
 
 #if defined(HAVE_SURFACELESS_PLATFORM)
