@@ -29,7 +29,8 @@ include $(LOCAL_PATH)/common/Makefile.sources
 # Variables common to all DRI drivers
 
 MESA_DRI_CFLAGS := \
-	-DHAVE_ANDROID_PLATFORM
+	-DHAVE_ANDROID_PLATFORM \
+	-DHAVE_DRM_PLATFORM
 
 MESA_DRI_C_INCLUDES := \
 	$(addprefix $(MESA_TOP)/, $(mesa_dri_common_INCLUDES)) \

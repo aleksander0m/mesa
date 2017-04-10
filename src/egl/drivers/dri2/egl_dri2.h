@@ -282,7 +282,7 @@ struct dri2_egl_surface
    /* EGL-owned buffers */
    __DRIbuffer           *local_buffers[__DRI_BUFFER_COUNT];
 
-#if defined(HAVE_WAYLAND_PLATFORM) || defined(HAVE_DRM_PLATFORM)
+#if defined(HAVE_WAYLAND_PLATFORM) || defined(HAVE_ANDROID_PLATFORM) || defined(HAVE_DRM_PLATFORM)
    struct {
 #ifdef HAVE_WAYLAND_PLATFORM
       struct wl_buffer   *wl_buffer;
@@ -295,6 +295,9 @@ struct dri2_egl_surface
 #endif
 #ifdef HAVE_DRM_PLATFORM
       struct gbm_bo       *bo;
+#endif
+#ifdef HAVE_ANDROID_PLATFORM
+      struct ANativeWindowBuffer *buffer;
 #endif
       bool                locked;
       int                 age;
