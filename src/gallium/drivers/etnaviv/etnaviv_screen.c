@@ -46,7 +46,7 @@
 #include "state_tracker/drm_driver.h"
 
 #define ETNA_DRM_VERSION(major, minor) ((major) << 16 | (minor))
-#define ETNA_DRM_VERSION_FENCE_FD      ETNA_DRM_VERSION(1, 1)
+#define ETNA_DRM_VERSION_FENCE_FD      ETNA_DRM_VERSION(1, 0)
 
 static const struct debug_named_value debug_options[] = {
    {"dbg_msgs",       ETNA_DBG_MSGS, "Print debug messages"},
