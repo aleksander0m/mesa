@@ -61,8 +61,7 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
 	libmesa_gallium \
 	libmesa_pipe_loader \
 	libmesa_util \
-	libmesa_loader \
-	libmesa_pipe_ddebug
+	libmesa_loader
 
 # sort GALLIUM_SHARED_LIBS to remove any duplicates
 LOCAL_SHARED_LIBRARIES += $(sort $(GALLIUM_SHARED_LIBS))
