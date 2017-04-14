@@ -1092,6 +1092,7 @@ static const __DRIimageLoaderExtension droid_image_loader_extension = {
 
 static const __DRIextension *droid_dri2_loader_extensions[] = {
    &droid_dri2_loader_extension.base,
+   &droid_image_loader_extension.base,
    &image_lookup_extension.base,
    &use_invalidate.base,
    NULL,
