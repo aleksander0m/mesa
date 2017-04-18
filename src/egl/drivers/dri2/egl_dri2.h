@@ -307,8 +307,6 @@ struct dri2_egl_surface
 #ifdef HAVE_ANDROID_PLATFORM
    struct ANativeWindow *window;
    struct ANativeWindowBuffer *buffer;
-   __DRIimage *dri_image_back;
-   __DRIimage *dri_image_front;
 
    /* Used to record all the buffers created by ANativeWindow and their ages.
     * Usually Android uses at most triple buffers in ANativeWindow
