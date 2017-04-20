@@ -156,6 +156,8 @@ etna_resource_sampler_compatible(struct etna_resource *res)
    return true;
 }
 
+extern char *__progname;
+
 static struct pipe_sampler_view *
 etna_create_sampler_view(struct pipe_context *pctx, struct pipe_resource *prsc,
                          const struct pipe_sampler_view *so)
@@ -166,6 +168,9 @@ etna_create_sampler_view(struct pipe_context *pctx, struct pipe_resource *prsc,
 
    if (!sv)
       return NULL;
+
+   if (strstr(__progname, "surfaceflinger"))
+      res->layout = ETNA_LAYOUT_TILED;
 
    if (!etna_resource_sampler_compatible(res)) {
       /* The original resource is not compatible with the sampler.
