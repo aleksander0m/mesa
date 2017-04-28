@@ -171,7 +171,7 @@ etna_create_sampler_view(struct pipe_context *pctx, struct pipe_resource *prsc,
          templat.bind &= ~(PIPE_BIND_DEPTH_STENCIL | PIPE_BIND_RENDER_TARGET |
                            PIPE_BIND_BLENDABLE);
          res->texture =
-            etna_resource_alloc(pctx->screen, ETNA_LAYOUT_TILED, &templat);
+            etna_resource_alloc(pctx->screen, ETNA_LAYOUT_TILED, 0, &templat);
       }
 
       if (!res->texture) {
