@@ -152,45 +152,6 @@ static int get_format(int format)
    return -1;
 }
 
-/* Gross hack */
-struct gralloc_drm_handle_t {
-	native_handle_t base;
-
-	/* file descriptors */
-	int prime_fd;
-
-	/* integers */
-	int magic;
-
-	int width;
-	int height;
-	int format;
-	int usage;
-
-	int name;   /* the name of the bo */
-	int stride; /* the stride in bytes */
-
-	int data_owner; /* owner of data (for validation) */
-	union {
-		void *data; /* pointer to struct gralloc_gbm_bo_t */
-		uint64_t reserved;
-	} __attribute__((aligned(8)));
-};
-
-struct gralloc_gbm_bo_t {
-	struct gbm_bo *bo;
-	void *map_data;
-
-	struct gralloc_gbm_handle_t *handle;
-
-	int imported;  /* the handle is from a remote proces when true */
-
-	int lock_count;
-	int locked_for;
-
-	unsigned int refcount;
-};
-
 static __DRIimage *
 get_native_image(struct ANativeWindowBuffer *buf)
 {
