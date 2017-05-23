@@ -1088,6 +1088,8 @@ dri2_create_image_common(__DRIscreen *_screen,
    assert(!(use && (modifiers != NULL)));
 
    tex_usage = PIPE_BIND_RENDER_TARGET | PIPE_BIND_SAMPLER_VIEW;
+   if (modifiers)
+      tex_usage |= PIPE_BIND_SCANOUT;
 
    if (use & __DRI_IMAGE_USE_SCANOUT)
       tex_usage |= PIPE_BIND_SCANOUT;
