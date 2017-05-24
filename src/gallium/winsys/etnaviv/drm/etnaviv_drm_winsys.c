@@ -153,7 +153,7 @@ struct pipe_screen *
 etna_drm_screen_create(int fd)
 {
    struct renderonly ro = {
-      .create_for_resource = renderonly_create_gpu_import_for_resource,
+      .create_for_resource = NULL,
       .kms_fd = -1,
       .gpu_fd = fd
    };

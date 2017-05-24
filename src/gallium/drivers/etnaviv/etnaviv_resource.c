@@ -158,6 +158,29 @@ static unsigned int modifier_to_layout(uint64_t modifier)
    }
 }
 
+static uint64_t layout_to_modifier(unsigned int layout)
+{
+   switch (layout) {
+   case ETNA_LAYOUT_TILED:
+      return DRM_FORMAT_MOD_VIVANTE_TILED;
+   case ETNA_LAYOUT_SUPER_TILED:
+      return DRM_FORMAT_MOD_VIVANTE_SUPER_TILED;
+   case ETNA_LAYOUT_MULTI_TILED:
+      return DRM_FORMAT_MOD_VIVANTE_SPLIT_TILED;
+   case ETNA_LAYOUT_MULTI_SUPERTILED:
+      return DRM_FORMAT_MOD_VIVANTE_SPLIT_SUPER_TILED;
+   case ETNA_LAYOUT_LINEAR:
+      return DRM_FORMAT_MOD_LINEAR;
+   default:
+      return DRM_FORMAT_MOD_INVALID;
+   }
+}
+
+static struct pipe_resource *
+etna_resource_from_handle(struct pipe_screen *pscreen,
+                          const struct pipe_resource *tmpl,
+                          struct winsys_handle *handle, unsigned usage);
+
 /* Create a new resource object, using the given template info */
 struct pipe_resource *
 etna_resource_alloc(struct pipe_screen *pscreen, unsigned layout,
@@ -165,6 +188,7 @@ etna_resource_alloc(struct pipe_screen *pscreen, unsigned layout,
 {
    struct etna_screen *screen = etna_screen(pscreen);
    struct renderonly_scanout *scanout = NULL;
+   struct etna_resource *scanout_rsc = NULL;
    unsigned size;
 
    DBG_F(ETNA_DBG_RESOURCE_MSGS,
@@ -212,7 +236,7 @@ etna_resource_alloc(struct pipe_screen *pscreen, unsigned layout,
 
    if (templat->bind & PIPE_BIND_SCANOUT) {
       struct pipe_resource scanout_templat = *templat;
-      struct etna_resource *scanout_rsc;
+      struct winsys_handle handle;
 
       if (modifier) {
          scanout_templat.width0 = align(scanout_templat.width0, paddingX);
@@ -220,22 +244,15 @@ etna_resource_alloc(struct pipe_screen *pscreen, unsigned layout,
       }
       scanout_templat.screen = pscreen;
       scanout = renderonly_scanout_for_resource(&scanout_templat,
-                                                screen->ro);
-      scanout_rsc = etna_resource(scanout->prime);
-      scanout_rsc->layout = modifier_to_layout(modifier);
-
-      /* if we have a modifer the scanout resource is directly renderable */
-      if (modifier) {
-         scanout_rsc->base.width0 = templat->width0;
-         scanout_rsc->base.height0 = templat->height0;
-         scanout_rsc->levels[0].width = templat->width0;
-         scanout_rsc->levels[0].height = templat->height0;
-         scanout_rsc->halign = halign;
+                                                screen->ro, &handle);
+      handle.modifier = modifier;
+      scanout_rsc = etna_resource(etna_resource_from_handle(pscreen, templat, &handle,
+                                              PIPE_HANDLE_USAGE_READ_WRITE));
+      if (scanout_rsc->external)
+         etna_resource(scanout_rsc->external)->scanout = scanout;
+      else
          scanout_rsc->scanout = scanout;
-         list_inithead(&scanout_rsc->list);
-
-         return &scanout_rsc->base;
-      }
+      return &scanout_rsc->base;
    }
 
    struct etna_resource *rsc = CALLOC_STRUCT(etna_resource);
@@ -248,7 +265,6 @@ etna_resource_alloc(struct pipe_screen *pscreen, unsigned layout,
    rsc->base.nr_samples = nr_samples;
    rsc->layout = layout;
    rsc->halign = halign;
-   rsc->scanout = scanout;
 
    pipe_reference_init(&rsc->base.reference, 1);
    list_inithead(&rsc->list);
@@ -395,17 +411,16 @@ select_best_modifier(const struct etna_screen * screen,
 static struct pipe_resource *
 etna_resource_create_modifiers(struct pipe_screen *pscreen,
                                const struct pipe_resource *templat,
-                               const uint64_t *modifiers, int count,
-                               uint64_t *modifier)
+                               const uint64_t *modifiers, int count)
 {
    struct etna_screen *screen = etna_screen(pscreen);
-   *modifier = select_best_modifier(screen, modifiers, count);
+   uint64_t modifier = select_best_modifier(screen, modifiers, count);
    unsigned int layout;
 
-   if (*modifier == DRM_FORMAT_MOD_INVALID)
+   if (modifier == DRM_FORMAT_MOD_INVALID)
       return NULL;
 
-   layout = modifier_to_layout(*modifier);
+   layout = modifier_to_layout(modifier);
    if (layout == ETNA_LAYOUT_LINEAR) {
       layout = ETNA_LAYOUT_TILED;
       if (screen->specs.can_supertile)
@@ -414,7 +429,7 @@ etna_resource_create_modifiers(struct pipe_screen *pscreen,
          layout |= ETNA_LAYOUT_BIT_MULTI;
    }
 
-   return etna_resource_alloc(pscreen, layout, *modifier, templat);
+   return etna_resource_alloc(pscreen, layout, modifier, templat);
 }
 
 static void
@@ -422,7 +437,10 @@ etna_resource_changed(struct pipe_screen *pscreen, struct pipe_resource *prsc)
 {
    struct etna_resource *res = etna_resource(prsc);
 
-   res->seqno++;
+   if (res->external)
+      etna_resource(res->external)->seqno++;
+   else
+      res->seqno++;
 }
 
 static void
@@ -442,6 +460,7 @@ etna_resource_destroy(struct pipe_screen *pscreen, struct pipe_resource *prsc)
    list_delinit(&rsc->list);
 
    pipe_resource_reference(&rsc->texture, NULL);
+   pipe_resource_reference(&rsc->external, NULL);
 
    FREE(rsc);
 }
@@ -477,6 +496,7 @@ etna_resource_from_handle(struct pipe_screen *pscreen,
       goto fail;
 
    rsc->seqno = 1;
+   rsc->layout = modifier_to_layout(handle->modifier);
 
    level->width = tmpl->width0;
    level->height = tmpl->height0;
@@ -503,20 +523,19 @@ etna_resource_from_handle(struct pipe_screen *pscreen,
       goto fail;
    }
 
-   if (handle->type == DRM_API_HANDLE_TYPE_SHARED && tmpl->bind & PIPE_BIND_RENDER_TARGET) {
-      /* Render targets are linear in Xorg but must be tiled
-      * here. It would be nice if dri_drawable_get_format()
-      * set scanout for these buffers too. */
+   if (handle->modifier == DRM_FORMAT_MOD_INVALID ||
+       handle->modifier == DRM_FORMAT_MOD_LINEAR) {
+      struct pipe_resource tiled_templat = *tmpl;
       struct etna_resource *tiled;
 
-      ptiled = etna_resource_create(pscreen, tmpl);
+      tiled_templat.bind &= ~PIPE_BIND_SCANOUT;
+
+      ptiled = etna_resource_create(pscreen, &tiled_templat);
       if (!ptiled)
          goto fail;
 
       tiled = etna_resource(ptiled);
-      tiled->scanout = renderonly_scanout_for_prime(prsc, screen->ro);
-      if (!tiled->scanout)
-         goto fail;
+      tiled->external = prsc;
 
       return ptiled;
    }
@@ -539,6 +558,11 @@ etna_resource_get_handle(struct pipe_screen *pscreen,
 {
    struct etna_resource *rsc = etna_resource(prsc);
 
+   /* if there is an external resource that is the one we want to share */
+   if (rsc->external)
+      rsc = etna_resource(rsc->external);
+
+   handle->modifier = layout_to_modifier(rsc->layout);
    if (renderonly_get_handle(rsc->scanout, handle))
       return TRUE;
 

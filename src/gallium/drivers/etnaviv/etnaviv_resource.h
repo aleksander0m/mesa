@@ -75,6 +75,8 @@ struct etna_resource {
 
    /* When we are rendering to a texture, we need a differently tiled resource */
    struct pipe_resource *texture;
+   /* External target may have a layout incompatible with sampler and/or pixel engine */
+   struct pipe_resource *external;
 
    enum etna_resource_status status;
 
