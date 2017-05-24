@@ -328,7 +328,10 @@ etna_resource_create(struct pipe_screen *pscreen,
    if (templat->target == PIPE_TEXTURE_3D)
       layout = ETNA_LAYOUT_LINEAR;
 
-   return etna_resource_alloc(pscreen, layout, 0, templat);
+   if (templat->bind & PIPE_BIND_LINEAR)
+      layout = ETNA_LAYOUT_LINEAR;
+
+   return etna_resource_alloc(pscreen, layout, DRM_FORMAT_MOD_LINEAR, templat);
 }
 
 enum modifier_priority {
