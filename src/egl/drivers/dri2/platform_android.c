@@ -181,6 +181,13 @@ get_native_buffer_name(struct ANativeWindowBuffer *buf)
    return (handle) ? handle->name : 0;
 }
 
+static unsigned long long
+get_native_buffer_modifier(struct ANativeWindowBuffer *buf)
+{
+   struct gralloc_drm_handle_t *handle = gralloc_drm_handle(buf->handle);
+   return handle->modifier;
+}
+
 static EGLBoolean
 droid_window_dequeue_buffer(struct dri2_egl_surface *dri2_surf)
 {
@@ -662,6 +669,7 @@ droid_create_image_from_prime_fd(_EGLDisplay *disp, _EGLContext *ctx,
                                  struct ANativeWindowBuffer *buf, int fd)
 {
    unsigned int pitch;
+   uint64_t modifier = get_native_buffer_modifier(buf);
 
    if (is_yuv(buf->format)) {
       _EGLImage *image;
@@ -696,6 +704,8 @@ droid_create_image_from_prime_fd(_EGLDisplay *disp, _EGLContext *ctx,
       EGL_LINUX_DRM_FOURCC_EXT, fourcc,
       EGL_DMA_BUF_PLANE0_FD_EXT, fd,
       EGL_DMA_BUF_PLANE0_PITCH_EXT, pitch,
+      EGL_DMA_BUF_PLANE0_MODIFIER_LO_EXT, (uint32_t)(modifier & 0xFFFFFFFFLL),
+      EGL_DMA_BUF_PLANE0_MODIFIER_HI_EXT, (uint32_t)((modifier & 0xFFFFFFFF00000000LL) >> 32),
       EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
       EGL_NONE, 0
    };
