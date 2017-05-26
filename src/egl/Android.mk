@@ -63,7 +63,6 @@ LOCAL_SHARED_LIBRARIES := \
 	libhardware \
 	liblog \
 	libcutils \
-	libgralloc_drm \
 	libsync \
 	libgbm
 
