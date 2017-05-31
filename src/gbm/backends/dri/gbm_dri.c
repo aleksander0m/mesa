@@ -932,6 +932,58 @@ gbm_dri_bo_import(struct gbm_device *gbm,
       break;
    }
 
+   case GBM_BO_IMPORT_FD_MODIFIER:
+   {
+      struct gbm_import_fd_modifier_data *fd_data = buffer;
+      int stride = fd_data->stride, offset = 0;
+      unsigned int error;
+      int fourcc;
+
+      /* Import with modifier requires createImageFromDmaBufs2 */
+      if (dri->image == NULL || dri->image->base.version < 15 ||
+          dri->image->createImageFromDmaBufs2 == NULL) {
+         errno = ENOSYS;
+         return NULL;
+      }
+
+      switch(fd_data->format) {
+      case GBM_FORMAT_RGB565:
+         fourcc = __DRI_IMAGE_FOURCC_RGB565;
+         break;
+      case GBM_FORMAT_ARGB8888:
+      case GBM_BO_FORMAT_ARGB8888:
+         fourcc = __DRI_IMAGE_FOURCC_ARGB8888;
+         break;
+      case GBM_FORMAT_XRGB8888:
+      case GBM_BO_FORMAT_XRGB8888:
+         fourcc = __DRI_IMAGE_FOURCC_XRGB8888;
+         break;
+      case GBM_FORMAT_ABGR8888:
+         fourcc = __DRI_IMAGE_FOURCC_ABGR8888;
+         break;
+      case GBM_FORMAT_XBGR8888:
+         fourcc = __DRI_IMAGE_FOURCC_XBGR8888;
+         break;
+      default:
+         errno = EINVAL;
+         return NULL;
+      }
+
+      image = dri->image->createImageFromDmaBufs2(dri->screen, fd_data->width,
+                                                  fd_data->height, fourcc,
+                                                  fd_data->modifier,
+                                                  &fd_data->fd, 1,
+                                                  &stride, &offset, 0, 0, 0, 0,
+                                                  &error, NULL);
+      if (image == NULL) {
+         errno = ENOSYS;
+         return NULL;
+      }
+
+      gbm_format = fd_data->format;
+      break;
+   }
+
    default:
       errno = ENOSYS;
       return NULL;
