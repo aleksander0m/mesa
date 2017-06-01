@@ -1616,8 +1616,16 @@ dri2_unmap_image(__DRIcontext *context, __DRIimage *image, void *data)
 {
    struct dri_context *ctx = dri_context(context);
    struct pipe_context *pipe = ctx->st->pipe;
+   struct pipe_screen *screen = pipe->screen;
+   struct pipe_transfer *trans = data;
+   struct pipe_resource *res = trans->resource;
+   struct pipe_fence_handle *fence;
 
-   pipe_transfer_unmap(pipe, (struct pipe_transfer *)data);
+   pipe_transfer_unmap(pipe, trans);
+   pipe->flush_resource(pipe, res);
+   pipe->flush(pipe, &fence, 0);
+   screen->fence_finish(screen, pipe, fence, 5000000000ULL);
+   screen->fence_reference(screen, &fence, NULL);
 }
 
 static void
