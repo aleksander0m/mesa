@@ -497,14 +497,19 @@ etna_resource_from_handle(struct pipe_screen *pscreen,
 
    rsc->seqno = 1;
    rsc->layout = modifier_to_layout(handle->modifier);
+   rsc->halign = TEXTURE_HALIGN_FOUR;
 
    level->width = tmpl->width0;
    level->height = tmpl->height0;
 
-   /* We will be using the RS to copy with this resource, so we must
-    * ensure that it is appropriately aligned for the RS requirements. */
-   unsigned paddingX = ETNA_RS_WIDTH_MASK + 1;
-   unsigned paddingY = (ETNA_RS_HEIGHT_MASK + 1) * screen->specs.pixel_pipes;
+   /* Determine needed padding (alignment of height/width) */
+   unsigned paddingX = 0, paddingY = 0;
+   etna_layout_multiple(rsc->layout, screen->specs.pixel_pipes,
+                        VIV_FEATURE(screen, chipMinorFeatures1, TEXTURE_HALIGN),
+                        &paddingX, &paddingY, &rsc->halign);
+
+   if (paddingY < 4 * screen->specs.pixel_pipes)
+      paddingY = 4 * screen->specs.pixel_pipes;
 
    level->padded_width = align(level->width, paddingX);
    level->padded_height = align(level->height, paddingY);
