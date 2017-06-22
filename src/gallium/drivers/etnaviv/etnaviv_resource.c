@@ -306,7 +306,10 @@ etna_resource_changed(struct pipe_screen *pscreen, struct pipe_resource *prsc)
 {
    struct etna_resource *res = etna_resource(prsc);
 
-   res->seqno++;
+   if (res->external)
+      etna_resource(res->external)->seqno++;
+   else
+      res->seqno++;
 }
 
 static void
