@@ -203,7 +203,7 @@ etna_transfer_map(struct pipe_context *pctx, struct pipe_resource *prsc,
       templ.nr_samples = 0;
       templ.bind = PIPE_BIND_RENDER_TARGET;
 
-      trans->rsc = etna_resource_alloc(pctx->screen, ETNA_LAYOUT_LINEAR, &templ);
+      trans->rsc = etna_resource_alloc(pctx->screen, ETNA_LAYOUT_LINEAR, 0, &templ);
       if (!trans->rsc) {
          slab_free(&ctx->transfer_pool, trans);
          return NULL;
