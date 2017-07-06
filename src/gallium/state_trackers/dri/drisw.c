@@ -404,6 +404,7 @@ drisw_init_screen(__DRIscreen * sPriv)
 
    screen->sPriv = sPriv;
    screen->fd = -1;
+   (void) mtx_init(&screen->opencl_func_mutex, mtx_plain);
 
    swrast_no_present = debug_get_option_swrast_no_present();
 
