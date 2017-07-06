@@ -2168,6 +2168,7 @@ dri_kms_init_screen(__DRIscreen * sPriv)
 
    screen->sPriv = sPriv;
    screen->fd = sPriv->fd;
+   (void) mtx_init(&screen->opencl_func_mutex, mtx_plain);
 
    sPriv->driverPrivate = (void *)screen;
 
