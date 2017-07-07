@@ -1237,6 +1237,13 @@ struct __DRIdri2ExtensionRec {
  * could be read after a flush."
  */
 #define __DRI_IMAGE_USE_BACKBUFFER      0x0010
+/* The following flags are there to optimize mixed GPU/CPU usage of a DRI
+ * image and may be all absent for regular GPU only images.
+ */
+#define __DRI_IMAGE_USE_RENDER          0x0100
+#define __DRI_IMAGE_USE_TEXTURE         0x0200
+#define __DRI_IMAGE_USE_MAP_READ        0x0400
+#define __DRI_IMAGE_USE_MAP_WRITE       0x0800
 
 
 #define __DRI_IMAGE_TRANSFER_READ            0x1
