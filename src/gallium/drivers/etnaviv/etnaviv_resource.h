@@ -70,6 +70,7 @@ struct etna_resource {
    unsigned halign;
    struct etna_bo *bo; /* Surface video memory */
    struct etna_bo *ts_bo; /* Tile status video memory */
+   void *staging_buffer; /* staging memory for fast uploads */
 
    struct etna_resource_level levels[ETNA_NUM_LOD];
 

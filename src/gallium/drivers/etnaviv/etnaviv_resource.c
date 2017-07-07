@@ -286,6 +286,15 @@ etna_resource_alloc(struct pipe_screen *pscreen, unsigned layout,
       goto free_rsc;
    }
 
+   /* For staging resources (fast CPU access) we keep a shadow in cached memory.
+    * This is only done for sampler resources, as those don't have any
+    * complications with the need to read back changed buffer content from the
+    * GPU. Failure to allocate the staging memory isn't fatal as we can fall
+    * back to a regular transfer without it.
+    */
+   if (templat->usage == PIPE_USAGE_STAGING && etna_resource_sampler_only(templat))
+      rsc->staging_buffer = MALLOC(size);
+
    rsc->bo = bo;
    rsc->ts_bo = 0; /* TS is only created when first bound to surface */
 
@@ -460,6 +469,9 @@ etna_resource_destroy(struct pipe_screen *pscreen, struct pipe_resource *prsc)
 
    if (rsc->ts_bo)
       etna_bo_del(rsc->ts_bo);
+
+   if (rsc->staging_buffer)
+      FREE(rsc->staging_buffer);
 
    if (rsc->scanout)
       renderonly_scanout_destroy(rsc->scanout, etna_screen(pscreen)->ro);
