@@ -1148,6 +1148,15 @@ gbm_dri_bo_create(struct gbm_device *gbm,
       dri_use |= __DRI_IMAGE_USE_CURSOR;
    if (usage & GBM_BO_USE_LINEAR)
       dri_use |= __DRI_IMAGE_USE_LINEAR;
+   if (usage & GBM_BO_USE_RENDERING)
+      dri_use |= __DRI_IMAGE_USE_RENDER;
+   if (usage & GBM_BO_USE_TEXTURING)
+      dri_use |= __DRI_IMAGE_USE_TEXTURE;
+   if (usage & GBM_BO_USE_MAP_READ)
+      dri_use |= __DRI_IMAGE_USE_MAP_READ;
+   if (usage & GBM_BO_USE_MAP_WRITE)
+      dri_use |= __DRI_IMAGE_USE_MAP_WRITE;
+
 
    /* Gallium drivers requires shared in order to get the handle/stride */
    dri_use |= __DRI_IMAGE_USE_SHARE;
