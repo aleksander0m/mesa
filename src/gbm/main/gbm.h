@@ -226,6 +226,20 @@ enum gbm_bo_flags {
     * Buffer is linear, i.e. not tiled.
     */
    GBM_BO_USE_LINEAR = (1 << 4),
+   /**
+    * Buffer is to be used for texturing (bound to a hardware sampler).
+    */
+   GBM_BO_USE_TEXTURING    = (1 << 5),
+   /**
+    * Buffer can be used for CPU read access through gbm_bo_map. The driver will
+    * optimize the allocation for CPU read.
+    */
+   GBM_BO_USE_MAP_READ     = (1 << 6),
+   /**
+    * Buffer can be used for CPU write access through gbm_bo_map. The driver
+    * will optimize the allocation for CPU write.
+    */
+   GBM_BO_USE_MAP_WRITE    = (1 << 7),
 };
 
 int
