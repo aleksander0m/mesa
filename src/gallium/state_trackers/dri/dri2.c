@@ -1128,7 +1128,8 @@ dri2_create_image_common(__DRIscreen *_screen,
    struct dri_screen *screen = dri_screen(_screen);
    __DRIimage *img;
    struct pipe_resource templ;
-   unsigned tex_usage;
+   unsigned tex_bind = 0;
+   enum pipe_resource_usage tex_usage = PIPE_USAGE_DEFAULT;
    enum pipe_format pf;
 
    /* createImageWithModifiers doesn't supply usage, and we should not get
@@ -1136,19 +1137,35 @@ dri2_create_image_common(__DRIscreen *_screen,
     */
    assert(!(use && (modifiers != NULL)));
 
-   tex_usage = PIPE_BIND_RENDER_TARGET | PIPE_BIND_SAMPLER_VIEW;
+   /* If we don't know how the image will be used we need to assume both
+    * rendering and texturing. Otherwise pass through usage.
+    */
+   if (!(use & (__DRI_IMAGE_USE_RENDER | __DRI_IMAGE_USE_TEXTURE)))
+      tex_bind |= PIPE_BIND_RENDER_TARGET | PIPE_BIND_SAMPLER_VIEW;
+   if (use & __DRI_IMAGE_USE_RENDER)
+      tex_bind |= PIPE_BIND_RENDER_TARGET;
+   if (use & __DRI_IMAGE_USE_TEXTURE)
+      tex_bind |= PIPE_BIND_SAMPLER_VIEW;
 
    if (use & __DRI_IMAGE_USE_SCANOUT)
-      tex_usage |= PIPE_BIND_SCANOUT;
+      tex_bind |= PIPE_BIND_SCANOUT;
    if (use & __DRI_IMAGE_USE_SHARE)
-      tex_usage |= PIPE_BIND_SHARED;
+      tex_bind |= PIPE_BIND_SHARED;
    if (use & __DRI_IMAGE_USE_LINEAR)
-      tex_usage |= PIPE_BIND_LINEAR;
+      tex_bind |= PIPE_BIND_LINEAR;
    if (use & __DRI_IMAGE_USE_CURSOR) {
       if (width != 64 || height != 64)
          return NULL;
-      tex_usage |= PIPE_BIND_CURSOR;
+      tex_bind |= PIPE_BIND_CURSOR;
    }
+
+   /* Only a single usage hint allowed, gradually upgrade the usage for faster
+    * CPU access.
+    */
+   if (use & __DRI_IMAGE_USE_MAP_WRITE)
+      tex_usage = PIPE_USAGE_DYNAMIC;
+   if (use & __DRI_IMAGE_USE_MAP_READ)
+      tex_usage = PIPE_USAGE_STAGING;
 
    pf = dri2_format_to_pipe_format (format);
    if (pf == PIPE_FORMAT_NONE)
@@ -1159,7 +1176,8 @@ dri2_create_image_common(__DRIscreen *_screen,
       return NULL;
 
    memset(&templ, 0, sizeof(templ));
-   templ.bind = tex_usage;
+   templ.bind = tex_bind;
+   templ.usage = tex_usage;
    templ.format = pf;
    templ.target = PIPE_TEXTURE_2D;
    templ.last_level = 0;
