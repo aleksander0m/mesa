@@ -88,14 +88,12 @@ etna_transfer_unmap(struct pipe_context *pctx, struct pipe_transfer *ptrans)
           * tiling format. Write back the updated buffer contents.
           * FIXME: we need to invalidate the tile status. */
          etna_copy_resource_box(pctx, ptrans->resource, trans->rsc, ptrans->level, &ptrans->box);
-      } else if (trans->staging || rsc->staging_buffer) {
-         void *staging = trans->staging;
+      } else if (trans->staging) {
          /* If the resource has a permanent staging buffer all writes will have
           * gone there without any synchronization of the GPU BO at all. To
           * flush the write, we need to pull the GPU BO in the CPU domain first.
           */
          if (unlikely(rsc->staging_buffer)) {
-            staging = rsc->staging_buffer;
             if (!(ptrans->usage & PIPE_TRANSFER_UNSYNCHRONIZED))
                etna_bo_cpu_prep(rsc->bo, DRM_ETNA_PREP_WRITE);
          }
@@ -106,7 +104,7 @@ etna_transfer_unmap(struct pipe_context *pctx, struct pipe_transfer *ptrans)
          if (rsc->layout == ETNA_LAYOUT_TILED) {
             etna_texture_tile(
                mapped + ptrans->box.z * res_level->layer_stride,
-               staging, ptrans->box.x, ptrans->box.y,
+               trans->staging, ptrans->box.x, ptrans->box.y,
                res_level->stride, ptrans->box.width, ptrans->box.height,
                ptrans->stride, util_format_get_blocksize(rsc->base.format));
          } else if (rsc->layout == ETNA_LAYOUT_LINEAR) {
@@ -114,12 +112,15 @@ etna_transfer_unmap(struct pipe_context *pctx, struct pipe_transfer *ptrans)
                           res_level->layer_stride, ptrans->box.x,
                           ptrans->box.y, ptrans->box.z, ptrans->box.width,
                           ptrans->box.height, ptrans->box.depth,
-                          staging, ptrans->stride,
+                          trans->staging, ptrans->stride,
                           ptrans->layer_stride, 0, 0, 0 /* src x,y,z */);
          } else {
             BUG("unsupported tiling %i", rsc->layout);
          }
-         if (trans->staging)
+         /* For resources without a permanent staging buffer, the transfer has a
+          * temporary staging buffer allocated.
+          */
+         if (!rsc->staging_buffer)
             FREE(trans->staging);
       }
 
@@ -189,13 +190,17 @@ etna_transfer_map(struct pipe_context *pctx, struct pipe_resource *prsc,
 
    /* If there is a staging buf all resource reads/writes are to be done there. */
    if (unlikely(rsc->staging_buffer)) {
+      struct etna_resource_level *res_level = &rsc->levels[level];
       /* Currently we support this only for sampler-only resources */
       assert(((rsc->layout == ETNA_LAYOUT_LINEAR) ||
               (rsc->layout == ETNA_LAYOUT_TILED)) &&
              !rsc->texture);
-      ptrans->stride = rsc->levels[level].stride;
-      ptrans->layer_stride = rsc->levels[level].layer_stride;
-      return rsc->staging_buffer;
+      ptrans->stride = res_level->stride;
+      ptrans->layer_stride = res_level->layer_stride;
+      trans->staging = rsc->staging_buffer + res_level->offset +
+                       etna_compute_offset(prsc->format, box, res_level->stride,
+                                           res_level->layer_stride);
+      return trans->staging;
    }
 
    if (rsc->texture && !etna_resource_newer(rsc, etna_resource(rsc->texture))) {

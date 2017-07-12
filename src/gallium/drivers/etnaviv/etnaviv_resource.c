@@ -551,6 +551,14 @@ etna_resource_from_handle(struct pipe_screen *pscreen,
       goto fail;
    }
 
+   /* XXX: This is a hack and will not work with resources that end up used as
+    * render target, but we lack the proper usage information here.
+    * We optimistically allocate a staging buffer here to speed up texture
+    * uploads.
+    */
+   if (rsc->layout == ETNA_LAYOUT_TILED)
+      rsc->staging_buffer = MALLOC(etna_bo_size(rsc->bo));
+
    if (rsc->layout == ETNA_LAYOUT_LINEAR) {
       /*
        * Both sampler and pixel pipes can't handle linear, create a compatible
