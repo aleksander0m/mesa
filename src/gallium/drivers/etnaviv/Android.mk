@@ -30,6 +30,7 @@ LOCAL_SRC_FILES := \
 
 LOCAL_SHARED_LIBRARIES := libdrm_etnaviv
 LOCAL_MODULE := libmesa_pipe_etnaviv
+LOCAL_CFLAGS += -mfpu=neon
 
 include $(GALLIUM_COMMON_MK)
 include $(BUILD_STATIC_LIBRARY)
