@@ -88,7 +88,8 @@ etna_blend_state_create(struct pipe_context *pctx,
          VIVS_PE_LOGIC_OP_OP(logicop_enable ? so->logicop_func : LOGIC_OP_COPY) |
          0x000E4000 /* ??? */;
 
-   co->fo_allowed = !alpha_enable && !logicop_enable;
+   co->fo_allowed = !alpha_enable &&
+                    (!logicop_enable || so->logicop_func == LOGIC_OP_COPY);
 
    /* independent_blend_enable not needed: only one rt supported */
    /* XXX alpha_to_coverage / alpha_to_one? */
