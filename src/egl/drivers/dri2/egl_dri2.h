@@ -307,15 +307,6 @@ struct dri2_egl_surface
 #ifdef HAVE_ANDROID_PLATFORM
    struct ANativeWindow *window;
    struct ANativeWindowBuffer *buffer;
-
-   /* Used to record all the buffers created by ANativeWindow and their ages.
-    * Usually Android uses at most triple buffers in ANativeWindow
-    * so hardcode the number of color_buffers to 3.
-    */
-   struct {
-      struct ANativeWindowBuffer *buffer;
-      int age;
-   } color_buffers[3], *back;
 #endif
 
 #if defined(HAVE_SURFACELESS_PLATFORM)
